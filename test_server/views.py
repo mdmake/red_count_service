@@ -6,22 +6,6 @@ import db
 import json
 from db import redtable
 
-async def handler(request):
-    # print(request)
-    return web.Response(text="Hello, world")
-
-
-async def post_handler(request):
-    post = await request.post()
-    body = request.rel_url.query
-    image = post.get('image')
-    tag = post.get('tag')
-    print(type(image))
-    print(image)  # see post details
-    print(tag)  # see post details
-    return web.Response(text="get you picture )) ")
-
-
 async def post_image_handler(request):
 
     # print("request.version",        request.version)
@@ -66,15 +50,50 @@ async def post_image_handler(request):
     return web.json_response(data_set)
 
 
+
+#  Ресурсы /images/{image_id} c методом GET, который отдаёт
+#  {'image_id": x, "red": ..., "account_id": ..., "tag": ...}.
+#  Метод DELETE удаляет картинку из базы.
+
+# redtable = Table(
+#     'red_count_base', meta,
+#     Column('id', Integer, primary_key=True, autoincrement=True),
+#     Column('user_id', Integer),
+#     Column('image_tag', String),
+#     Column('red', Float)
+# )
 async def get_image_handler(request):
-    body = await request.text()
-    print()
-    body2 = request.rel_url.query
-    print(body, body2)
+    image_number = request.match_info.get('image_number', "Anonymous")
 
-    return web.Response(text="text")
-    # return web.Response(text="Hello, world")
+    conn = request.app['db'].connect()
 
-async def put_handler(request):
-    print(request)
-    return web.Response(text="Hello, world")
+    try:
+        im_number = int(image_number)
+    except Exception as e:
+        return web.Response(status=400, text="{} not correct image number".format(image_number))
+
+    expr1 = redtable.select(redtable).where(redtable.c.id == im_number)
+    dd = conn.execute(expr1)
+
+    data = list()
+    keys = ['id', 'user_id', 'image_tag', 'red']
+    for item in dd:
+        values = list(item)
+        data.append(dict(zip(keys, values)))
+
+    conn.close()
+    print(data)
+
+
+    if data:
+        data_set = {'image_id': data[0]['id'],
+                    "red": data[0]['red'],
+                    "account_id": data[0]['user_id'],
+                    "tag": data[0]['image_tag']
+                    }
+        return web.json_response(data_set)
+
+    else:
+        return web.Response(status=400, text="Image with id={} not exist".format(im_number))
+
+
