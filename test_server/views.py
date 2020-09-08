@@ -65,12 +65,12 @@ async def post_image_handler(request):
 async def get_image_handler(request):
     image_number = request.match_info.get('image_number', "Anonymous")
 
-    conn = request.app['db'].connect()
-
     try:
         im_number = int(image_number)
     except Exception as e:
         return web.Response(status=400, text="{} not correct image number".format(image_number))
+
+    conn = request.app['db'].connect()
 
     expr1 = redtable.select(redtable).where(redtable.c.id == im_number)
     dd = conn.execute(expr1)
@@ -96,4 +96,26 @@ async def get_image_handler(request):
     else:
         return web.Response(status=400, text="Image with id={} not exist".format(im_number))
 
+
+async def delete_image_handler(request):
+    image_number = request.match_info.get('image_number', "NotFindANumber")
+
+    try:
+        im_number = int(image_number)
+    except Exception as e:
+        return web.Response(status=400, text="{} not correct image number".format(image_number))
+
+    conn = request.app['db'].connect()
+    expr1 = redtable.delete(redtable).where(redtable.c.id == im_number)
+    result = conn.execute(expr1)
+
+    #print(dd)
+    # for item in dd:
+    #     print("del item", item)
+    conn.close()
+
+    if result.rowcount > 0:
+        return web.Response(text="Image with id={} was deleted".format(im_number))
+    else:
+        return web.Response(status=400, text="Image with id={} not exist".format(im_number))
 
