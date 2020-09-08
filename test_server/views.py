@@ -2,8 +2,9 @@ from aiohttp import web
 import aiohttp
 import os
 from image_service import get_red_persent
-from db import engine, conn, redtable
+import db
 import json
+from db import redtable
 
 async def handler(request):
     # print(request)
@@ -59,20 +60,23 @@ async def post_image_handler(request):
 
             red_pixel_count, all_pixel_count = get_red_persent(content, threshold=0.7)
 
+
+## === === === === === === === === === === === === === ##
+
+            conn = await request.app['db'].acquire()
             expr1 = redtable.insert().returning(redtable.c.id)
-
-            # говнокод
-            rez_id = 0
-            for ret_id in conn.execute(expr1, [{'user_id': user_id, 'image_tag': image_tag, 'red': red_pixel_count}]):
-                rez_id = ret_id
-                break
+            dd = await conn.execute(expr1, [{'id':5, 'user_id': user_id, 'image_tag': image_tag, 'red': red_pixel_count}])
 
 
-            #with open("testimage.jpg", "wb") as f:
-            #    f.write(content)
+            #async with request.app['db'].acquire() as conn:
+            #    expr1 = redtable.insert().returning(redtable.c.id)
+            #    rez_id = 0
+            #    conn.execute(expr1, [{'user_id': user_id, 'image_tag': image_tag, 'red': red_pixel_count}])
+            #    # for ret_id in conn.execute(expr1, [{'user_id': user_id, 'image_tag': image_tag, 'red': red_pixel_count}]):
+            #    #     rez_id = ret_id
+            #    #     break
+## === === === === === === === === === === === === === ##
 
-            #post = await request.json()
-            #print("request.post", content)
             print("request.post len ", len(content))
             print("content type", type(content))
             pass
@@ -88,8 +92,8 @@ async def post_image_handler(request):
     else:
         print("NO BODY!!!")
 
-    xj = '{"image_id":"{}}", "red":{}}'.format(rez_id, red_pixel_count)
-    return web.Response(json=xj)
+    #xj = '{"image_id":"{}}", "red":{}}'.format(rez_id, red_pixel_count)
+    return web.Response(text="dfb dfgb")
 
 
 async def get_image_handler(request):
