@@ -24,76 +24,46 @@ async def post_handler(request):
 
 async def post_image_handler(request):
 
-    print("request.version",        request.version)
-    print("request.method",         request.method)
-    print("request.url",            request.url)
-    print("request.rel_url",        request.rel_url)
-    print("request.scheme",         request.scheme)
-    print("request.host",           request.host)
-    print("request.raw_path",       request.raw_path)
-    print("request.query",          request.query)
-    print("request.headers",        request.headers)
-    print("request.content",        request.content)
-    print("request.body_exists",    request.body_exists)
-    print("request.can_read_body",  request.can_read_body)
-    print("request.has_body",       request.has_body)
-    print("request.content_type",   request.content_type)
+    # print("request.version",        request.version)
+    # print("request.method",         request.method)
+    # print("request.url",            request.url)
+    # print("request.rel_url",        request.rel_url)
+    # print("request.scheme",         request.scheme)
+    # print("request.host",           request.host)
+    # print("request.raw_path",       request.raw_path)
+    # print("request.query",          request.query)
+    # print("request.headers",        request.headers)
+    # print("request.content",        request.content)
+    # print("request.body_exists",    request.body_exists)
+    # print("request.can_read_body",  request.can_read_body)
+    # print("request.has_body",       request.has_body)
+    # print("request.content_type",   request.content_type)
 
     if request.body_exists and request.can_read_body:
-
-        if "image" in request.content_type:
-
-            query = request.rel_url.query
-            user_id = query.get("id", "NoneId")
-            image_tag = query.get("tag", "NoneTag")
-            # проверка на user_id
-
-            # redtable = Table(
-            #     'red_count_base', meta,
-            #     Column('id', Integer, primary_key=True, autoincrement=True),
-            #     Column('user_id', Integer),
-            #     Column('image_tag', String),
-            #     Column('red', Float)
-            # )
-
-            content = await request.content.read()
-
-            red_pixel_count, all_pixel_count = get_red_persent(content, threshold=0.7)
-
-
-## === === === === === === === === === === === === === ##
-
-            conn = await request.app['db'].acquire()
-            expr1 = redtable.insert().returning(redtable.c.id)
-            dd = await conn.execute(expr1, [{'id':5, 'user_id': user_id, 'image_tag': image_tag, 'red': red_pixel_count}])
-
-
-            #async with request.app['db'].acquire() as conn:
-            #    expr1 = redtable.insert().returning(redtable.c.id)
-            #    rez_id = 0
-            #    conn.execute(expr1, [{'user_id': user_id, 'image_tag': image_tag, 'red': red_pixel_count}])
-            #    # for ret_id in conn.execute(expr1, [{'user_id': user_id, 'image_tag': image_tag, 'red': red_pixel_count}]):
-            #    #     rez_id = ret_id
-            #    #     break
-## === === === === === === === === === === === === === ##
-
-            print("request.post len ", len(content))
-            print("content type", type(content))
-            pass
-        elif "multipart" in request.content_type:
-            reader = await request.multipart()
-            print("reader", reader)
-            pass
-
         query = request.rel_url.query
+        user_id = query.get("id", "NoneId")
+        image_tag = query.get("tag", "NoneTag")
+        # проверка на user_id
 
-        print(query.get("id", "NoneId"))
-        print(query.get("tag", "NoneTag"))
+        content = await request.content.read()
+
+        red_pixel_percent = get_red_persent(content, threshold=0.7)
+
+        conn = request.app['db'].connect()
+        print("conn", conn)
+        expr1 = redtable.insert().returning(redtable.c.id)
+        dd = conn.execute(expr1, [{'user_id': user_id, 'image_tag': image_tag, 'red': red_pixel_percent}])
+        for item in dd:
+            rez_id = item[0]
+        # print(dd[0])
+        # print(dd.id)
+        conn.close()
     else:
-        print("NO BODY!!!")
+        return web.Response(status=400, text="No image was sent!")
 
     #xj = '{"image_id":"{}}", "red":{}}'.format(rez_id, red_pixel_count)
-    return web.Response(text="dfb dfgb")
+    data_set = {"image_id": rez_id, "red": red_pixel_percent}
+    return web.json_response(data_set)
 
 
 async def get_image_handler(request):
