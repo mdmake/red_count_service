@@ -65,6 +65,7 @@ async def post_image_handler(request):
 async def get_image_handler(request):
     image_number = request.match_info.get('image_number', "Anonymous")
 
+    # а так ли нужно?
     try:
         im_number = int(image_number)
     except Exception as e:
@@ -119,3 +120,36 @@ async def delete_image_handler(request):
     else:
         return web.Response(status=400, text="Image with id={} not exist".format(im_number))
 
+# Ресурс /images/count, который на метод
+# GET принимает следующие query параметры:
+# account_id, tag, red__gt и ищет в базе сколько
+# записей уддовлетворяет им (red__gt - минимальное количество красного)
+# и отдаёт это число в ответе
+
+async def get_image_count_handler(request):
+
+    data1 = request.match_info
+    print(data1)
+    try:
+        query = request.rel_url.query
+        user_id = int(query.get('account_id', "None"))
+        tag = query.get('tag', "None")
+        red__gt = float(query.get('red__gt', "0"))
+    except Exception as e:
+        return web.Response(status=400, text="Something get wrong")
+
+    conn = request.app['db'].connect()
+
+    expr1 = redtable.select(redtable).where((redtable.c.user_id == user_id) & (redtable.c.image_tag == tag) & (redtable.c.red >= red__gt))
+    result = conn.execute(expr1)
+
+    data = list()
+    keys = ['id', 'user_id', 'image_tag', 'red']
+    for item in result:
+        values = list(item)
+        data.append(dict(zip(keys, values)))
+
+    conn.close()
+    print(data)
+
+    return web.Response(text=str(result.rowcount))
