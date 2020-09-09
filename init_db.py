@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine, MetaData
-from test_server.settings import config
-from test_server.db import redtable
+from red_service.settings import config
+from red_service.db import redtable
 
 DSN = 'postgresql://patrick:@localhost:5432/server_test'
 
