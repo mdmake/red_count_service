@@ -1,9 +1,7 @@
 from sqlalchemy import (
-    MetaData, Table, Column, ForeignKey,
-    Integer, String, Float, Date
+    MetaData, Table, Column,
+    Integer, String, Float, create_engine
 )
-
-from sqlalchemy import create_engine, MetaData
 
 meta = MetaData()
 
@@ -38,7 +36,6 @@ async def close_db(app):
     pass
 
 
-
 # +---------------+
 # | id            |
 # +===============+
@@ -48,5 +45,3 @@ async def close_db(app):
 # +---------------+
 # | red           |
 # +---------------+
-
-

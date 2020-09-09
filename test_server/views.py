@@ -1,14 +1,30 @@
 from aiohttp import web
 import aiohttp
 import os
-from image_service import get_red_persent
+from image_service import get_red_percent
 import db
 import json
 from db import redtable
 
 
-
 async def post_image_handler(request):
+
+    """
+    :param request:
+    :return:
+    Обрабатывает  POST запросы от пользователя, тело запроса представляет из
+    себя байты. В этих байтах лежит картинка (jpg).
+    Query параметром передаётся id пользователя (int) и, опционално,
+    вторым query параметром пользователь может передать tag картинки (str).
+    После того, как картинка принята, сервис преобразует её в numpy array и считает процент пикселей, в
+    которых преобладает красный цвет.
+    полученное число он сохраняет в базу вместе с id аккаунта, tag-ом.
+    База должна выдать картинке новый уникальный идентификатор x (под капотом автоинкримент
+    и returning в sql).
+    После того, как картинка сохранена в базе, ей выдан порядковый номер x,
+    пользователю отдаётся в ответе json содержания {'image_id": x, "red": ...}.
+    После происходит асинхронная отправка json сообщения боту в телеграмм {'image_id": x, "red": ..., "account_id": ..., "tag": ...}.
+    """
 
     try:
         query = request.rel_url.query
@@ -22,7 +38,7 @@ async def post_image_handler(request):
 
         content = await request.content.read()
 
-        red_pixel_percent = get_red_persent(content, threshold=0.7)
+        red_pixel_percent = get_red_percent(content, threshold=0.7)
 
         conn = request.app['db'].connect()
         expression = redtable.insert().returning(redtable.c.id)
@@ -43,7 +59,8 @@ async def post_image_handler(request):
                     }
         if request.app['tg_users']:
             try:
-                request.app['bot'].send_message(request.app['tg_users'][-1], str(request.app['tg_data']))
+                for user in request.app['tg_users']:
+                    request.app['bot'].send_message(user, str(request.app['tg_data']))
             except Exception as e:
                 pass
 
@@ -65,6 +82,15 @@ def create_dict_from_select_result(prxobject):
 
 
 async def get_image_handler(request):
+    """
+
+    :param request:
+    :return:
+
+    Обрабатывает запрос по id картинки, отдаёт
+    {'image_id": x, "red": ..., "account_id": ..., "tag": ...}.
+    """
+
     image_number = request.match_info.get('image_number', "NoNumber")
 
     try:
@@ -93,6 +119,13 @@ async def get_image_handler(request):
 
 
 async def delete_image_handler(request):
+
+    """
+    :param request:
+    :return:
+    Удаляет картинку из базы по id
+    """
+
     image_number = request.match_info.get('image_number', 'NoNumber')
 
     try:
@@ -112,6 +145,17 @@ async def delete_image_handler(request):
 
 
 async def get_image_count_handler(request):
+    """
+
+    :param request:
+    :return:
+
+    Принимает следующие query параметры: account_id, tag, red__gt и
+    ищет в базе сколько записей уддовлетворяет им
+    (red__gt - минимальное количество красного) и
+    отдаёт это число в ответе
+    """
+
     try:
         query = request.rel_url.query
         user_id = int(query.get('account_id', "None"))
@@ -132,6 +176,12 @@ async def get_image_count_handler(request):
 
 
 async def get_telegramm_handler(request):
+    """
+    :param request:
+    :return:
+    Принимает запрос от телеграм-сервиса с id текущего пользователя
+    и токеном бота.
+    """
     user_id = request.rel_url.query.get('user_id', None)
     token = request.rel_url.query.get('token', None)
     if user_id:
