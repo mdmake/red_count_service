@@ -4,7 +4,6 @@ from sqlalchemy import (
 )
 
 from sqlalchemy import create_engine, MetaData
-import aiopg.sa
 
 meta = MetaData()
 
@@ -16,17 +15,26 @@ redtable = Table(
     Column('red', Float)
 )
 
-redtable.select()
 
-async def init_pg(app):
+def create_url(cn):
+    url = ''
+    for k, v in cn.items():
+        if not cn[k]:
+            cn[k]=''
+    url = 'postgresql://{}:{}@{}:{}/{}'.format(cn['user'], \
+            cn['password'], cn['host'], cn['port'], cn['database'])
+
+    return url
+
+async def init_db(app):
     conf = app['config']['postgres']
-    engine = create_engine('postgresql://patrick:@localhost:5432/server_test', echo=True)
+    url = create_url(conf)
+
+    engine = create_engine(url, echo=True)
     app['db'] = engine
 
 
-async def close_pg(app):
-    # app['db'].close()
-    # await app['db'].wait_closed()
+async def close_db(app):
     pass
 
 

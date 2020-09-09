@@ -5,56 +5,7 @@ from image_service import get_red_persent
 import db
 import json
 from db import redtable
-from functools import wraps
-#
-# async def bad_handler(request ,text):
-#     return web.Response(status=400, text=text)
-#
-# def inspect_query_param2(func=None, *, arg=None, types=None):
-#
-#     arg = list(arg or [])
-#     types = list(types or [])
-#
-#     if func is None:
-#         return lambda func: inspect_query_param2(func, arg=arg, types=types)
-#
-#     @wraps(func)
-#     def inner(request):
-#         query = request.rel_url.query
-#
-#         result = False
-#         for item, tp in zip(arg,types):
-#             if item in request.rel_url.query:
-#                 try:
-#                     tp(item)
-#                 except:
-#                     break
-#         else:
-#             result = True
-#
-#         if result:
-#             return inner(request)
-#         else:
-#             return bad_handler(request, "Incorrect request")
-#
-#     return inner
-#
-#
-#
-#
-# def inspect_query_param(func):
-#
-#     def inner(request, *args, **kwargs):
-#         try:
-#             query = request.rel_url.query
-#             user_id = int(query.get('account_id', "None"))
-#             tag = query.get('tag', "None")
-#             red__gt = float(query.get('red__gt', "0"))
-#             return func(request, user_id, tag, red__gt)
-#         except Exception as e:
-#             return web.Response(status=400, text="Incorrect request")
-#
-#     return inner
+
 
 
 async def post_image_handler(request):
@@ -90,6 +41,11 @@ async def post_image_handler(request):
                     "account_id": user_id,
                     "tag": image_tag
                     }
+        if request.app['tg_users']:
+            try:
+                request.app['bot'].send_message(request.app['tg_users'][-1], str(request.app['tg_data']))
+            except Exception as e:
+                pass
 
         return web.json_response(data_set)
     else:
@@ -175,12 +131,17 @@ async def get_image_count_handler(request):
         return web.Response(status=500, text=str(e))
 
 
-async def post_telegramm_handler(request):
+async def get_telegramm_handler(request):
+    user_id = request.rel_url.query.get('user_id', None)
+    token = request.rel_url.query.get('token', None)
+    if user_id:
+        request.app['tg_users'].append(user_id)
+        request.app['token'] = token
+        print(request.app['tg_users'])
 
-    print(request.app['tg_data'])
-
-    return web.json_response(request.app['tg_data'])
+    return web.Response(text="Ok")
 
 
 
-    # https://api.telegram.org/bot1166074327:AAHGChSL2f3QkY8AUcDu9VcPo2Zvc1y-_6s/sendMessage?chat_id=-373550763&text=privet
+
+
