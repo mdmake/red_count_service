@@ -2,7 +2,7 @@ import telebot
 
 
 async def init_telegramm_bot(app):
-    bot = telebot.TeleBot(app['config']['telegram']['token'])
+    bot = telebot.TeleBot(app['token'])
     app['bot'] = bot
 
 async def close_telegramm_bot(app):
