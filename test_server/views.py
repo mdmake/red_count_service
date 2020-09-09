@@ -185,7 +185,8 @@ async def get_telegramm_handler(request):
     user_id = request.rel_url.query.get('user_id', None)
     token = request.rel_url.query.get('token', None)
     if user_id:
-        request.app['tg_users'].append(user_id)
+        if user_id not in request.app['tg_users']:
+            request.app['tg_users'].append(user_id)
         request.app['token'] = token
         print(request.app['tg_users'])
 
