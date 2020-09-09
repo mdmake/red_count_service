@@ -13,6 +13,7 @@ app['tg_users'] = list()
 app['token'] = os.environ.get('TOKEN')
 
 port = int(os.environ.get('PORT', 8000))
+print(f'port: ->  {port}')
 
 setup_routes(app)
 app.on_startup.append(init_db)
