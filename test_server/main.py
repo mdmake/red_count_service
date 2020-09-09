@@ -5,12 +5,10 @@ from db import close_pg, init_pg
 from telegramm_bot import init_telegramm_bot
 
 
-async def hello(request):
-    return web.Response(text="Hello, world")
-
 
 app = web.Application()
 app['config'] = config
+app['tg_data'] = {}
 
 setup_routes(app)
 app.on_startup.append(init_pg)

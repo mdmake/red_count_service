@@ -15,7 +15,7 @@ def sample_data(engine):
     conn.execute(redtable.insert(), [
         {'user_id': 99,
          'image_tag': 'Mona_Lisa',
-         'red':0.55}
+         'red': 0.55}
     ])
     conn.close()
 
