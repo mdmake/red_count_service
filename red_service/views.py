@@ -1,10 +1,10 @@
 from aiohttp import web
 import aiohttp
 import os
-from image_service import get_red_percent
-import db
+from red_service.image_service import get_red_percent
+import red_service.db
 import json
-from db import redtable
+from red_service.db import redtable
 
 
 async def post_image_handler(request):

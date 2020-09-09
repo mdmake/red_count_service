@@ -1,8 +1,8 @@
-from settings import config
-from routes import setup_routes
+from red_service.settings import config
+from red_service.routes import setup_routes
 from aiohttp import web
-from db import close_db, init_db
-from telegramm_bot import init_telegramm_bot, close_telegramm_bot
+from red_service.db import close_db, init_db
+from red_service.telegramm_bot import init_telegramm_bot, close_telegramm_bot
 import os
 
 #

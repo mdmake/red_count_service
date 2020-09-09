@@ -1,6 +1,6 @@
 from aiohttp import web
-from views import get_image_handler, post_image_handler, delete_image_handler, get_image_count_handler
-from views import get_telegramm_handler
+from red_service.views import get_image_handler, post_image_handler, delete_image_handler, get_image_count_handler
+from red_service.views import get_telegramm_handler
 
 
 def setup_routes(app):
