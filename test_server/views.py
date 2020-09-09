@@ -153,3 +153,30 @@ async def get_image_count_handler(request):
     print(data)
 
     return web.Response(text=str(result.rowcount))
+
+#после происходит асинхронная отправка json сообщения боту в телеграмм {'image_id": x, "red": ..., "account_id": ..., "tag": ...}.
+
+chatnum = None
+
+async def post_telegramm_handler(request):
+    d = request.app['bot'].get_updates()
+
+    print("new ==================")
+    for item in d:
+        print(item.message.chat.id)
+
+    print(d[0].message.chat.id)
+    print(d[-1].message.chat.id)
+
+    print("end ==================")
+
+
+
+    request.app['bot'].send_message(d[-1].message.chat.id, "Привет от сервера!!")
+    #request.app['bot'].send_message(68735827, "Привет от сервера!!")
+
+    return web.Response(text="it's ok!")
+
+
+
+     # https://api.telegram.org/bot1166074327:AAHGChSL2f3QkY8AUcDu9VcPo2Zvc1y-_6s/sendMessage?chat_id=-373550763&text=privet
