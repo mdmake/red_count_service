@@ -164,7 +164,7 @@ async def get_image_count_handler(request):
     except Exception as e:
         return web.Response(status=400, text="Incorrect request")
 
-
+    print("query", query, user_id, tag, red__gt)
     try:
         conn = request.app['db'].connect()
         expression = redtable.select(redtable).where((redtable.c.user_id == user_id) & (redtable.c.image_tag == tag) & (redtable.c.red >= red__gt))
