@@ -2,6 +2,7 @@ from sqlalchemy import (
     MetaData, Table, Column,
     Integer, String, Float, create_engine
 )
+import os
 
 meta = MetaData()
 
@@ -21,6 +22,9 @@ def create_url(cn):
             cn[k]=''
     url = 'postgresql://{}:{}@{}:{}/{}'.format(cn['user'], \
             cn['password'], cn['host'], cn['port'], cn['database'])
+
+    url=os.environ.get('DATABASE_URL')
+    print(url)
 
     return url
 

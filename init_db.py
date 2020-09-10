@@ -1,8 +1,11 @@
 from sqlalchemy import create_engine, MetaData
-from test_server.settings import config
-from test_server.db import redtable
+from red_service.settings import config
+from red_service.db import redtable
+import os
 
-DSN = 'postgresql://patrick:@localhost:5432/server_test'
+db_url = os.environ.get('DATABASE_URL')
+#DSN = 'postgresql://patrick:@localhost:5432/server_test'
+#DSN = url
 
 
 def create_tables(engine):
@@ -21,7 +24,8 @@ def sample_data(engine):
 
 
 if __name__ == '__main__':
-    db_url = DSN.format(**config['postgres'])
+    #db_url = DSN.format(**config['postgres'])
+    db_url = os.environ.get('DATABASE_URL')
     engine = create_engine(db_url, echo=True)
     create_tables(engine)
     sample_data(engine)

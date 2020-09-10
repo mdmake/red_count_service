@@ -10,4 +10,7 @@ postgres:
 telegram:
   token: '1054426026:AAE-QWcn68QB3eEaZ_H-F37CnXsRmGemkDY'
   user_id:
+web:
+  url: "localhost"
+  port: 9093
 
