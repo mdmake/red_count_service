@@ -160,11 +160,16 @@ async def get_image_count_handler(request):
         query = request.rel_url.query
         user_id = int(query.get('account_id', "None"))
         tag = query.get('tag', "None")
-        red__gt = float(query.get('red__gt', "0"))
+        red__gt = float(query.get('red__gt', 0))
     except Exception as e:
         return web.Response(status=400, text="Incorrect request")
 
-    print("query", query, user_id, tag, red__gt)
+    print("====================================================")
+    print("query1", query)
+    print("query2", user_id, tag, red__gt)
+    print("====================================================")
+
+
     try:
         conn = request.app['db'].connect()
         expression = redtable.select(redtable).where((redtable.c.user_id == user_id) & (redtable.c.image_tag == tag) & (redtable.c.red >= red__gt))
