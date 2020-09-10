@@ -29,7 +29,7 @@ async def post_image_handler(request):
     try:
         query = request.rel_url.query
         user_id = int(query["id"])
-        image_tag = query.get("tag", "NoneTag")
+        image_tag = query.get("tag", "NoTag")
     except Exception as e:
         return web.Response(status=500, text=str(e))
 
@@ -158,9 +158,9 @@ async def get_image_count_handler(request):
 
     try:
         query = request.rel_url.query
-        user_id = int(query.get('account_id', "None"))
-        tag = query.get('tag', "None")
-        red__gt = float(query.get('red__gt', 0))
+        user_id = int(query['account_id'])
+        tag = query['tag']
+        red__gt = float(query['red__gt'])
     except Exception as e:
         return web.Response(status=400, text="Incorrect request")
 
