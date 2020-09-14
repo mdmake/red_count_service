@@ -172,7 +172,7 @@ async def get_image_count_handler(request):
 
     try:
         conn = request.app['db'].connect()
-        expression = redtable.select(redtable).where((redtable.c.user_id == user_id) & (redtable.c.image_tag == tag) & (redtable.c.red >= red__gt))
+        expression = redtable.select(redtable).where((redtable.c.user_id == user_id) & (redtable.c.image_tag == tag) & (redtable.c.red > red__gt))
         result = conn.execute(expression)
 
         return web.Response(text=str(result.rowcount))
