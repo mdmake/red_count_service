@@ -3,7 +3,7 @@ import numpy as np
 import io
 
 
-def get_red_percent(b_str, threshold=0.5):
+def get_red_percent(b_str):
 
     """
     :param b_str: картинка в виде байтового массива
@@ -16,15 +16,10 @@ def get_red_percent(b_str, threshold=0.5):
     выше чем threshold
     """
 
-    # регуляризующий параметр
-    reg_par = 0.001
-
     image = np.array(Image.open(io.BytesIO(b_str)))
-    new_data = image.transpose(0,1,2).reshape(-1, 3)
-    msum = np.sum(new_data, axis=1)
-    farr = new_data[:, 0]
-    percent_array = np.divide(farr, msum+reg_par)
-    pixel_count = percent_array[percent_array > threshold].size
+    new_data = image.transpose(0, 1, 2).reshape(-1, 3)
+    pixel_count = new_data[np.logical_and(new_data[:, 0] > new_data[:, 1],
+                                          new_data[:, 0] > new_data[:, 2])].shape[0]
     all_pixel = new_data.shape[0]
-    percent = int(pixel_count/all_pixel*100)
+    percent = pixel_count/all_pixel
     return percent

@@ -38,7 +38,7 @@ async def post_image_handler(request):
 
         content = await request.content.read()
 
-        red_pixel_percent = get_red_percent(content, threshold=0.7)
+        red_pixel_percent = get_red_percent(content)
 
         conn = request.app['db'].connect()
         expression = redtable.insert().returning(redtable.c.id)
