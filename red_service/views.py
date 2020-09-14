@@ -14,11 +14,11 @@ async def post_image_handler(request):
     :return:
     Обрабатывает  POST запросы от пользователя, тело запроса представляет из
     себя байты. В этих байтах лежит картинка (jpg).
-    Query параметром передаётся id пользователя (int) и, опционално,
+    Query параметром передаётся account_id пользователя (int) и, опционално,
     вторым query параметром пользователь может передать tag картинки (str).
     После того, как картинка принята, сервис преобразует её в numpy array и считает процент пикселей, в
     которых преобладает красный цвет.
-    полученное число он сохраняет в базу вместе с id аккаунта, tag-ом.
+    полученное число он сохраняет в базу вместе с account_id аккаунта, tag-ом.
     База должна выдать картинке новый уникальный идентификатор x (под капотом автоинкримент
     и returning в sql).
     После того, как картинка сохранена в базе, ей выдан порядковый номер x,
@@ -28,8 +28,8 @@ async def post_image_handler(request):
 
     try:
         query = request.rel_url.query
-        account_id = int(query["id"])
-        image_tag = query.get("tag", "NoTag")
+        account_id = int(query["account_id"])
+        tag = query.get("tag", "NoTag")
     except Exception as e:
         return web.Response(status=500, text="Incorrect query parameters")
 
@@ -41,8 +41,8 @@ async def post_image_handler(request):
         red_pixel_percent = get_red_percent(content)
 
         conn = request.app['db'].connect()
-        expression = redtable.insert().returning(redtable.c.id)
-        result = conn.execute(expression, [{'account_id': account_id, 'image_tag': image_tag, 'red': red_pixel_percent}])
+        expression = redtable.insert().returning(redtable.c.image_id)
+        result = conn.execute(expression, [{'account_id': account_id, 'tag': tag, 'red': red_pixel_percent}])
         conn.close()
 
         rez_id = list()
@@ -55,7 +55,7 @@ async def post_image_handler(request):
         request.app['tg_data'] = {'image_id': rez_id[0],
                     "red": red_pixel_percent,
                     "account_id": account_id,
-                    "tag": image_tag
+                    "tag": tag
                     }
         if request.app['tg_users']:
             try:
@@ -71,7 +71,7 @@ async def post_image_handler(request):
 
 def create_dict_from_select_result(prxobject):
     data = list()
-    keys = ['id', 'account_id', 'image_tag', 'red']
+    keys = ['image_id', 'account_id', 'tag', 'red']
     for item in prxobject:
         values = list(item)
         data.append(dict(zip(keys, values)))
@@ -87,7 +87,7 @@ async def get_image_handler(request):
     :param request:
     :return:
 
-    Обрабатывает запрос по id картинки, отдаёт
+    Обрабатывает запрос по image_id картинки, отдаёт
     {'image_id": x, "red": ..., "account_id": ..., "tag": ...}.
     """
 
@@ -97,7 +97,7 @@ async def get_image_handler(request):
         im_number = int(image_number)
 
         conn = request.app['db'].connect()
-        expression = redtable.select(redtable).where(redtable.c.id == im_number)
+        expression = redtable.select(redtable).where(redtable.c.image_id == im_number)
         result = conn.execute(expression)
         conn.close()
 
@@ -107,15 +107,15 @@ async def get_image_handler(request):
         data = create_dict_from_select_result(result)
 
         if data:
-            data_set = {'image_id': data[0]['id'],
+            data_set = {'image_id': data[0]['image_id'],
                         "red": data[0]['red'],
                         "account_id": data[0]['account_id'],
-                        "tag": data[0]['image_tag']
+                        "tag": data[0]['tag']
                         }
             return web.json_response(data_set)
 
         else:
-            return web.Response(status=400, text="Image with id={} not exist".format(im_number))
+            return web.Response(status=400, text="Image with image_id={} not exist".format(im_number))
 
     except Exception as e:
         return web.Response(status=500, text=str(e))
@@ -126,7 +126,7 @@ async def delete_image_handler(request):
     """
     :param request:
     :return:
-    Удаляет картинку из базы по id
+    Удаляет картинку из базы по image_id
     """
 
     image_number = request.match_info.get('image_number', 'NoNumber')
@@ -135,14 +135,14 @@ async def delete_image_handler(request):
         im_number = int(image_number)
 
         conn = request.app['db'].connect()
-        expr1 = redtable.delete(redtable).where(redtable.c.id == im_number)
+        expr1 = redtable.delete(redtable).where(redtable.c.image_id == im_number)
         result = conn.execute(expr1)
         conn.close()
 
         if result.rowcount > 0:
-            return web.Response(text="Image with id={} was deleted".format(im_number))
+            return web.Response(text="Image with image_id={} was deleted".format(im_number))
         else:
-            return web.Response(status=400, text="Image with id={} not exist".format(im_number))
+            return web.Response(status=400, text="Image with image_id={} not exist".format(im_number))
     except Exception as e:
         return web.Response(status=500, text=str(e))
 
@@ -175,7 +175,7 @@ async def get_image_count_handler(request):
 
     try:
         conn = request.app['db'].connect()
-        expression = redtable.select(redtable).where((redtable.c.account_id == account_id) & (redtable.c.image_tag == tag) & (redtable.c.red > red__gt))
+        expression = redtable.select(redtable).where((redtable.c.account_id == account_id) & (redtable.c.tag == tag) & (redtable.c.red > red__gt))
         result = conn.execute(expression)
 
         return web.Response(text=str(result.rowcount))
@@ -187,7 +187,7 @@ async def get_telegramm_handler(request):
     """
     :param request:
     :return:
-    Принимает запрос от телеграм-сервиса с id текущего пользователя
+    Принимает запрос от телеграм-сервиса с account_id текущего пользователя
     и токеном бота.
     """
     account_id = request.rel_url.query.get('account_id', None)

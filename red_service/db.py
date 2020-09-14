@@ -6,27 +6,19 @@ import os
 
 meta = MetaData()
 
-# redtable = Table(
-#     'red_count_base', meta,
-#     Column('id', Integer, primary_key=True, autoincrement=True),
-#     Column('account_id', Integer, index=True),
-#     Column('image_tag', String),
-#     Column('red', Float, mssql_clustered=True)
-# )
-
-
 redtable = Table(
     'red_count_base', meta,
-    Column('id', Integer, primary_key=True, autoincrement=True),
-    Column('account_id', Integer),
-    Column('image_tag', String),
-    Column('red', Float)
+    Column('image_id', Integer, primary_key=True, autoincrement=True, index=True),
+    Column('account_id', Integer, index=True),
+    Column('tag', String),
+    Column('red', Float, index=True)
 )
+
 
 def db_get_image_handler(engine, num):
 
     with engine.connect() as conn:
-        expression = redtable.select(redtable).where(redtable.c.id == num)
+        expression = redtable.select(redtable).where(redtable.c.image_id == num)
         result = conn.execute(expression)
         return result
 
@@ -52,11 +44,11 @@ async def close_db(app):
 
 
 # +---------------+
-# | id            |
+# | image_id            |
 # +===============+
 # | account_id       |
 # +---------------+
-# | image_tag     |
+# | tag     |
 # +---------------+
 # | red           |
 # +---------------+

@@ -16,9 +16,17 @@ def sample_data(engine):
     conn = engine.connect()
     conn.execute(redtable.insert(), [
         {'account_id': 99,
-         'image_tag': 'Mona_Lisa',
-         'red': 0.55}
+         'tag': 'Mona_Lisa',
+         'red': 0.45}
     ])
+
+    conn.execute(redtable.insert(), [
+        {'account_id': 99,
+         'tag': 'Skrik',
+         'red': 0.65}
+    ])
+
+
     conn.close()
 
 
