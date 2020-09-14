@@ -31,7 +31,7 @@ async def post_image_handler(request):
         user_id = int(query["id"])
         image_tag = query.get("tag", "NoTag")
     except Exception as e:
-        return web.Response(status=500, text=str(e))
+        return web.Response(status=500, text="Incorrect query parameters")
 
 
     if request.body_exists and request.can_read_body:
