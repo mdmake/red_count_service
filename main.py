@@ -1,4 +1,3 @@
-from red_service.settings import config
 from red_service.routes import setup_routes
 from aiohttp import web
 from red_service.db import close_db, init_db
@@ -7,7 +6,6 @@ import os
 
 
 app = web.Application()
-app['config'] = config
 app['tg_data'] = {}
 app['tg_users'] = list()
 app['token'] = os.environ.get('TOKEN')

@@ -15,22 +15,15 @@ redtable = Table(
 )
 
 
-def create_url(cn):
-    url = ''
-    for k, v in cn.items():
-        if not cn[k]:
-            cn[k]=''
-    url = 'postgresql://{}:{}@{}:{}/{}'.format(cn['user'], \
-            cn['password'], cn['host'], cn['port'], cn['database'])
+def create_url():
 
-    url=os.environ.get('DATABASE_URL')
+    url = os.environ.get('DATABASE_URL')
     print(url)
 
     return url
 
 async def init_db(app):
-    conf = app['config']['postgres']
-    url = create_url(conf)
+    url = create_url()
 
     engine = create_engine(url, echo=True)
     app['db'] = engine
