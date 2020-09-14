@@ -4,7 +4,7 @@ import os
 from red_service.image_service import get_red_percent
 import red_service.db
 import json
-from red_service.db import redtable
+from red_service.db import redtable, db_get_image_handler
 
 
 async def post_image_handler(request):
@@ -100,6 +100,9 @@ async def get_image_handler(request):
         expression = redtable.select(redtable).where(redtable.c.id == im_number)
         result = conn.execute(expression)
         conn.close()
+
+        # result = db_get_image_handler(request.app['db'], im_number)
+
 
         data = create_dict_from_select_result(result)
 
