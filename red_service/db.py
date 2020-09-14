@@ -9,9 +9,9 @@ meta = MetaData()
 redtable = Table(
     'red_count_base', meta,
     Column('id', Integer, primary_key=True, autoincrement=True),
-    Column('user_id', Integer),
+    Column('user_id', Integer, index=True),
     Column('image_tag', String),
-    Column('red', Float)
+    Column('red', Float, mssql_clustered=True)
 )
 
 
