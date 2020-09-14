@@ -15,7 +15,7 @@ def create_tables(engine):
 def sample_data(engine):
     conn = engine.connect()
     conn.execute(redtable.insert(), [
-        {'user_id': 99,
+        {'account_id': 99,
          'image_tag': 'Mona_Lisa',
          'red': 0.55}
     ])

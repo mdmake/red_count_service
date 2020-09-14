@@ -28,7 +28,7 @@ async def post_image_handler(request):
 
     try:
         query = request.rel_url.query
-        user_id = int(query["id"])
+        account_id = int(query["id"])
         image_tag = query.get("tag", "NoTag")
     except Exception as e:
         return web.Response(status=500, text="Incorrect query parameters")
@@ -42,7 +42,7 @@ async def post_image_handler(request):
 
         conn = request.app['db'].connect()
         expression = redtable.insert().returning(redtable.c.id)
-        result = conn.execute(expression, [{'user_id': user_id, 'image_tag': image_tag, 'red': red_pixel_percent}])
+        result = conn.execute(expression, [{'account_id': account_id, 'image_tag': image_tag, 'red': red_pixel_percent}])
         conn.close()
 
         rez_id = list()
@@ -54,7 +54,7 @@ async def post_image_handler(request):
 
         request.app['tg_data'] = {'image_id': rez_id[0],
                     "red": red_pixel_percent,
-                    "account_id": user_id,
+                    "account_id": account_id,
                     "tag": image_tag
                     }
         if request.app['tg_users']:
@@ -71,7 +71,7 @@ async def post_image_handler(request):
 
 def create_dict_from_select_result(prxobject):
     data = list()
-    keys = ['id', 'user_id', 'image_tag', 'red']
+    keys = ['id', 'account_id', 'image_tag', 'red']
     for item in prxobject:
         values = list(item)
         data.append(dict(zip(keys, values)))
@@ -109,7 +109,7 @@ async def get_image_handler(request):
         if data:
             data_set = {'image_id': data[0]['id'],
                         "red": data[0]['red'],
-                        "account_id": data[0]['user_id'],
+                        "account_id": data[0]['account_id'],
                         "tag": data[0]['image_tag']
                         }
             return web.json_response(data_set)
@@ -161,7 +161,7 @@ async def get_image_count_handler(request):
 
     try:
         query = request.rel_url.query
-        user_id = int(query['account_id'])
+        account_id = int(query['account_id'])
         tag = query['tag']
         red__gt = float(query['red__gt'])
     except Exception as e:
@@ -169,13 +169,13 @@ async def get_image_count_handler(request):
 
     print("====================================================")
     print("query1", query)
-    print("query2", user_id, tag, red__gt)
+    print("query2", account_id, tag, red__gt)
     print("====================================================")
 
 
     try:
         conn = request.app['db'].connect()
-        expression = redtable.select(redtable).where((redtable.c.user_id == user_id) & (redtable.c.image_tag == tag) & (redtable.c.red > red__gt))
+        expression = redtable.select(redtable).where((redtable.c.account_id == account_id) & (redtable.c.image_tag == tag) & (redtable.c.red > red__gt))
         result = conn.execute(expression)
 
         return web.Response(text=str(result.rowcount))
@@ -190,11 +190,11 @@ async def get_telegramm_handler(request):
     Принимает запрос от телеграм-сервиса с id текущего пользователя
     и токеном бота.
     """
-    user_id = request.rel_url.query.get('user_id', None)
+    account_id = request.rel_url.query.get('account_id', None)
     token = request.rel_url.query.get('token', None)
-    if user_id:
-        if user_id not in request.app['tg_users']:
-            request.app['tg_users'].append(user_id)
+    if account_id:
+        if account_id not in request.app['tg_users']:
+            request.app['tg_users'].append(account_id)
         request.app['token'] = token
         print(request.app['tg_users'])
 
