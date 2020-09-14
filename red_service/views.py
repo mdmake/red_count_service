@@ -4,7 +4,9 @@ import os
 from red_service.image_service import get_red_percent
 import red_service.db
 import json
-from red_service.db import redtable, db_get_image_handler
+from red_service.db import redtable, db_get_image_handler, \
+    db_delete_image_handler, db_post_image_handler, \
+    db_get_image_count_handler
 
 
 async def post_image_handler(request):
@@ -33,17 +35,14 @@ async def post_image_handler(request):
     except Exception as e:
         return web.Response(status=500, text="Incorrect query parameters")
 
-
     if request.body_exists and request.can_read_body:
 
         content = await request.content.read()
 
         red_pixel_percent = get_red_percent(content)
 
-        conn = request.app['db'].connect()
-        expression = redtable.insert().returning(redtable.c.image_id)
-        result = conn.execute(expression, [{'account_id': account_id, 'tag': tag, 'red': red_pixel_percent}])
-        conn.close()
+        result = db_post_image_handler(request.app['db'], account_id, tag, red_pixel_percent)
+
 
         rez_id = list()
         for item in result:
@@ -96,12 +95,7 @@ async def get_image_handler(request):
     try:
         im_number = int(image_number)
 
-        conn = request.app['db'].connect()
-        expression = redtable.select(redtable).where(redtable.c.image_id == im_number)
-        result = conn.execute(expression)
-        conn.close()
-
-        # result = db_get_image_handler(request.app['db'], im_number)
+        result = db_get_image_handler(request.app['db'], im_number)
 
 
         data = create_dict_from_select_result(result)
@@ -134,10 +128,8 @@ async def delete_image_handler(request):
     try:
         im_number = int(image_number)
 
-        conn = request.app['db'].connect()
-        expr1 = redtable.delete(redtable).where(redtable.c.image_id == im_number)
-        result = conn.execute(expr1)
-        conn.close()
+        result = db_delete_image_handler(request.app['db'], im_number)
+
 
         if result.rowcount > 0:
             return web.Response(text="Image with image_id={} was deleted".format(im_number))
@@ -172,15 +164,12 @@ async def get_image_count_handler(request):
     print("query2", account_id, tag, red__gt)
     print("====================================================")
 
-
     try:
-        conn = request.app['db'].connect()
-        expression = redtable.select(redtable).where((redtable.c.account_id == account_id) & (redtable.c.tag == tag) & (redtable.c.red > red__gt))
-        result = conn.execute(expression)
+        result = db_get_image_count_handler(request.app['db'], account_id, tag, red__gt)
 
         return web.Response(text=str(result.rowcount))
     except Exception as e:
-        return web.Response(status=500, text=str(e))
+        return web.Response(status=500, text="Error DB connection")
 
 
 async def get_telegramm_handler(request):

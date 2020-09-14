@@ -23,6 +23,27 @@ def db_get_image_handler(engine, num):
         return result
 
 
+def db_delete_image_handler(engine, num):
+
+    with engine.connect() as conn:
+        expression = redtable.delete(redtable).where(redtable.c.image_id == num)
+        result = conn.execute(expression)
+        return result
+
+# --> переделать в словарь
+def db_post_image_handler(engine, account_id, tag, red_pixel_percent):
+
+    with engine.connect() as conn:
+        expression = redtable.insert().returning(redtable.c.image_id)
+        result = conn.execute(expression, [{'account_id': account_id, 'tag': tag, 'red': red_pixel_percent}])
+        return result
+
+def db_get_image_count_handler(engine, account_id, tag, red__gt):
+
+    with engine.connect() as conn:
+        expression = redtable.select(redtable).where((redtable.c.account_id == account_id) & (redtable.c.tag == tag) & (redtable.c.red > red__gt))
+        result = conn.execute(expression)
+        return result
 
 
 def create_url():
