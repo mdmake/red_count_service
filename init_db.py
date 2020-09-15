@@ -34,4 +34,4 @@ if __name__ == '__main__':
     db_url = os.environ.get('DATABASE_URL')
     engine = create_engine(db_url, echo=True)
     create_tables(engine)
-    sample_data(engine)
+    sample_data(engine)  # надо убрать

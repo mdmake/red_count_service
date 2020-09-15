@@ -5,6 +5,7 @@ async def init_telegramm_bot(app):
     bot = telebot.TeleBot(app['token'])
     app['bot'] = bot
 
+
 async def close_telegramm_bot(app):
     if app['tg_users']:
         try:
