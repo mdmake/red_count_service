@@ -8,6 +8,8 @@ from red_service.db import redtable, db_get_image_handler, \
     db_delete_image_handler, db_post_image_handler, \
     db_get_image_count_handler
 
+from red_service.tgbot import send_to_tg
+
 import requests
 tg_url = os.environ.get('TG_SERVICE_URL')
 
@@ -32,21 +34,7 @@ async def post_image_handler(request):
 
         result = db_post_image_handler(request.app['db'], account_id, tag, red_pixel_percent)
 
-        # send data to telegram
-        # request.app['tg_data'] = {'image_id': result["image_id"],
-        #             "red": red_pixel_percent,
-        #             "account_id": account_id,
-        #             "tag": tag
-        #             }
-
-        # if request.app['tg_users']:
-        #     try:
-        #         for user in request.app['tg_users']:
-        #             request.app['bot'].send_message(user, str(request.app['tg_data']))
-        #     except Exception as e:
-        #         pass
-
-        requests.post(tg_url, json=result)
+        await send_to_tg(tg_url, result)
 
         return web.json_response(result)
     else:
