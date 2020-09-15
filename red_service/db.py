@@ -28,7 +28,6 @@ def create_dict_from_select_result(proxiobject):
 
 def db_get_image_by_id(engine, num):
 
-
     with engine.connect() as conn:
         expression = redtable.select(redtable).where(redtable.c.image_id == num)
         result = conn.execute(expression)

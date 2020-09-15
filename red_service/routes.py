@@ -7,4 +7,4 @@ def setup_routes(app):
                     web.get('/image/{image_id:\d+}', get_image_handler),
                     web.post('/image', post_image_handler),
                     web.delete('/image/{image_id:\d+}', delete_image_handler),
-    ])
+                    ])
