@@ -6,14 +6,9 @@ import io
 def get_red_percent(b_str):
 
     """
-    :param b_str: картинка в виде байтового массива
-    :param threshold: пороговое значение красного в пикселе
-    :return: процент пикселей, в котором уровень красного выше
-             порогового значнеия
-
-    функция берет байтовый массив, конвертирует его в изображение и
-    возвращает количество пикселей c пороговым значением красного
-    выше чем threshold
+    :param b_str: image in byte array
+    :return: number of pixels with a predominance of red
+    Returns the number of pixels with a predominance of red
     """
 
     image = np.array(Image.open(io.BytesIO(b_str)))

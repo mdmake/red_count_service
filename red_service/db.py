@@ -15,19 +15,19 @@ redtable = Table(
 )
 
 
-def create_dict_from_select_result(prxobject):
+def create_dict_from_select_result(proxiobject):
     keys = ['image_id', 'account_id', 'tag', 'red']
 
     try:
-        values = list(prxobject.next())
+        values = list(proxiobject.next())
         data = dict(zip(keys, values))
         return data
     except:
         return None
 
 
-# поменять на get_image_handler
-def db_get_image_handler(engine, num):
+def db_get_image_by_id(engine, num):
+
 
     with engine.connect() as conn:
         expression = redtable.select(redtable).where(redtable.c.image_id == num)
@@ -38,7 +38,7 @@ def db_get_image_handler(engine, num):
         return data
 
 
-def db_delete_image_handler(engine, num):
+def db_del_image_by_id(engine, num):
 
     with engine.connect() as conn:
         expression = redtable.delete(redtable).where(redtable.c.image_id == num)
@@ -47,7 +47,7 @@ def db_delete_image_handler(engine, num):
         return result.rowcount
 
 
-def db_post_image_handler(engine, account_id, tag, red_pixel_percent):
+def db_save_image(engine, account_id, tag, red_pixel_percent):
 
     with engine.connect() as conn:
         expression = redtable.insert().returning(redtable.c.image_id)
@@ -58,7 +58,7 @@ def db_post_image_handler(engine, account_id, tag, red_pixel_percent):
         return data_set
 
 
-def db_get_image_count_handler(engine, account_id, tag, red__gt):
+def db_get_image_count(engine, account_id, tag, red__gt):
 
     with engine.connect() as conn:
         expression = redtable.select(redtable).where((redtable.c.account_id == account_id) & (redtable.c.tag == tag) & (redtable.c.red > red__gt))
