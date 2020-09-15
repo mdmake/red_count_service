@@ -1,203 +1,92 @@
 from aiohttp import web
-import aiohttp
-import os
 from red_service.image_service import get_red_percent
-import red_service.db
-import json
-from red_service.db import redtable
+from red_service.db import (db_get_image_by_id, db_del_image_by_id,
+                            db_save_image, db_get_image_count)
+
+from red_service.tgbot import send_to_tg
 
 
 async def post_image_handler(request):
 
     """
-    :param request:
-    :return:
-    Обрабатывает  POST запросы от пользователя, тело запроса представляет из
-    себя байты. В этих байтах лежит картинка (jpg).
-    Query параметром передаётся id пользователя (int) и, опционално,
-    вторым query параметром пользователь может передать tag картинки (str).
-    После того, как картинка принята, сервис преобразует её в numpy array и считает процент пикселей, в
-    которых преобладает красный цвет.
-    полученное число он сохраняет в базу вместе с id аккаунта, tag-ом.
-    База должна выдать картинке новый уникальный идентификатор x (под капотом автоинкримент
-    и returning в sql).
-    После того, как картинка сохранена в базе, ей выдан порядковый номер x,
-    пользователю отдаётся в ответе json содержания {'image_id": x, "red": ...}.
-    После происходит асинхронная отправка json сообщения боту в телеграмм {'image_id": x, "red": ..., "account_id": ..., "tag": ...}.
+    process POST-request from user and return image_id if succeed
     """
 
     try:
         query = request.rel_url.query
-        user_id = int(query["id"])
-        image_tag = query.get("tag", "NoTag")
+        account_id = int(query["account_id"])
+        tag = query.get("tag", "NoTag")
     except Exception as e:
-        return web.Response(status=500, text=str(e))
-
+        return web.Response(status=400, text="Incorrect query parameters")
 
     if request.body_exists and request.can_read_body:
 
         content = await request.content.read()
 
-        red_pixel_percent = get_red_percent(content, threshold=0.7)
+        red_pixel_percent = get_red_percent(content)
 
-        conn = request.app['db'].connect()
-        expression = redtable.insert().returning(redtable.c.id)
-        result = conn.execute(expression, [{'user_id': user_id, 'image_tag': image_tag, 'red': red_pixel_percent}])
-        conn.close()
+        result = db_save_image(request.app['db'], account_id, tag, red_pixel_percent)
 
-        rez_id = list()
-        for item in result:
-            rez_id.append(item[0])
+        await send_to_tg(request.app["tg_bot_url"], result)
 
-        print(rez_id)
-        data_set = {"image_id": rez_id[0], "red": red_pixel_percent}
-
-        request.app['tg_data'] = {'image_id': rez_id[0],
-                    "red": red_pixel_percent,
-                    "account_id": user_id,
-                    "tag": image_tag
-                    }
-        if request.app['tg_users']:
-            try:
-                for user in request.app['tg_users']:
-                    request.app['bot'].send_message(user, str(request.app['tg_data']))
-            except Exception as e:
-                pass
-
-        return web.json_response(data_set)
+        return web.json_response(result)
     else:
         return web.Response(status=400, text="No image was sent!")
 
 
-def create_dict_from_select_result(prxobject):
-    data = list()
-    keys = ['id', 'user_id', 'image_tag', 'red']
-    for item in prxobject:
-        values = list(item)
-        data.append(dict(zip(keys, values)))
-    if data:
-        return data
-    else:
-        return None
-
-
 async def get_image_handler(request):
-    """
 
-    :param request:
-    :return:
+    image_id = request.match_info.get('image_id', None)
 
-    Обрабатывает запрос по id картинки, отдаёт
-    {'image_id": x, "red": ..., "account_id": ..., "tag": ...}.
-    """
+    if image_id:
 
-    image_number = request.match_info.get('image_number', "NoNumber")
+        image_id = int(image_id)
 
-    try:
-        im_number = int(image_number)
-
-        conn = request.app['db'].connect()
-        expression = redtable.select(redtable).where(redtable.c.id == im_number)
-        result = conn.execute(expression)
-        conn.close()
-
-        data = create_dict_from_select_result(result)
+        data = db_get_image_by_id(request.app['db'], image_id)
 
         if data:
-            data_set = {'image_id': data[0]['id'],
-                        "red": data[0]['red'],
-                        "account_id": data[0]['user_id'],
-                        "tag": data[0]['image_tag']
-                        }
-            return web.json_response(data_set)
-
+            return web.json_response(data)
         else:
-            return web.Response(status=400, text="Image with id={} not exist".format(im_number))
-
-    except Exception as e:
-        return web.Response(status=500, text=str(e))
+            return web.Response(status=404, text=f"Image with image_id={image_id} not exist")
+    else:
+        return web.Response(status=400, text="Incorrect query param!")
 
 
 async def delete_image_handler(request):
 
     """
-    :param request:
-    :return:
-    Удаляет картинку из базы по id
+    delete image's record from db
     """
 
-    image_number = request.match_info.get('image_number', 'NoNumber')
+    image_id = request.match_info.get('image_id', None)
 
-    try:
-        im_number = int(image_number)
+    if image_id:
+        image_id = int(image_id)
 
-        conn = request.app['db'].connect()
-        expr1 = redtable.delete(redtable).where(redtable.c.id == im_number)
-        result = conn.execute(expr1)
-        conn.close()
+        result = db_del_image_by_id(request.app['db'], image_id)
 
-        if result.rowcount > 0:
-            return web.Response(text="Image with id={} was deleted".format(im_number))
+        if result > 0:
+            return web.Response(text="Image with image_id={} was deleted".format(image_id))
         else:
-            return web.Response(status=400, text="Image with id={} not exist".format(im_number))
-    except Exception as e:
-        return web.Response(status=500, text=str(e))
+            return web.Response(status=400, text="Image with image_id={} not exist".format(image_id))
+    else:
+        return web.Response(status=400, text="Incorrect query param!")
 
 
 async def get_image_count_handler(request):
+
     """
-
-    :param request:
-    :return:
-
-    Принимает следующие query параметры: account_id, tag, red__gt и
-    ищет в базе сколько записей уддовлетворяет им
-    (red__gt - минимальное количество красного) и
-    отдаёт это число в ответе
+    returns the number of records that match the conditions specified
+    in the request's query
     """
 
     try:
         query = request.rel_url.query
-        user_id = int(query['account_id'])
+        account_id = int(query['account_id'])
         tag = query['tag']
         red__gt = float(query['red__gt'])
-    except Exception as e:
-        return web.Response(status=400, text="Incorrect request")
+    except Exception:
+        return web.Response(status=400, text="Incorrect query param!")
 
-    print("====================================================")
-    print("query1", query)
-    print("query2", user_id, tag, red__gt)
-    print("====================================================")
-
-
-    try:
-        conn = request.app['db'].connect()
-        expression = redtable.select(redtable).where((redtable.c.user_id == user_id) & (redtable.c.image_tag == tag) & (redtable.c.red >= red__gt))
-        result = conn.execute(expression)
-
-        return web.Response(text=str(result.rowcount))
-    except Exception as e:
-        return web.Response(status=500, text=str(e))
-
-
-async def get_telegramm_handler(request):
-    """
-    :param request:
-    :return:
-    Принимает запрос от телеграм-сервиса с id текущего пользователя
-    и токеном бота.
-    """
-    user_id = request.rel_url.query.get('user_id', None)
-    token = request.rel_url.query.get('token', None)
-    if user_id:
-        if user_id not in request.app['tg_users']:
-            request.app['tg_users'].append(user_id)
-        request.app['token'] = token
-        print(request.app['tg_users'])
-
-    return web.Response(text="Ok")
-
-
-
-
-
+    result = db_get_image_count(request.app['db'], account_id, tag, red__gt)
+    return web.Response(text=str(result))
