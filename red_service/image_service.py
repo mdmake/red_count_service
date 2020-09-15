@@ -17,4 +17,4 @@ def get_red_percent(b_str):
                                           new_data[:, 0] > new_data[:, 2])].shape[0]
     all_pixel = new_data.shape[0]
     percent = pixel_count/all_pixel
-    return percent
+    return round(percent, 2)
